@@ -1,0 +1,36 @@
+package ru.yandex.practicum.filmorate.service;
+
+import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.model.Film;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class FilmService {
+    private final Map<Integer, Film> films = new HashMap<>();
+    private int id = 1;
+
+    public List<Film> getAllFilms() {
+        return new ArrayList<>(films.values());
+    }
+
+    public Film createFilm(Film film) {
+        film.setId(id);
+        films.put(film.getId(), film);
+        id += 1;
+        return film;
+    }
+
+    public Film updateFilm(Film film) {
+        int filmId = film.getId();
+        if (films.containsKey(filmId)) {
+            films.put(filmId, film);
+        } else {
+            return createFilm(film);
+        }
+        return film;
+    }
+}
