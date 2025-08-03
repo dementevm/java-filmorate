@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,5 +41,27 @@ public class GlobalExceptionHandler {
         Map<String, String> error = Map.of("error", ex.getMessage());
         log.warn("Ошибка при обновлении объекта - {}", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleExceptions(Exception ex) {
+        Map<String, String> error = new HashMap<>();
+        StackTraceElement[] stackTrace = ex.getStackTrace();
+        UUID uuid = UUID.randomUUID();
+        if (stackTrace.length > 0) {
+            StackTraceElement stackTraceElement = stackTrace[0];
+            int lineNumber = stackTraceElement.getLineNumber();
+            String fileName = stackTraceElement.getFileName();
+            String className = stackTraceElement.getClassName();
+            String methodName = stackTraceElement.getMethodName();
+            log.warn("Произошла необработанная ошибка: id ошибки: {}, fileName: {}, className: {}, " +
+                    "methodName: {}, lineNumber: {}, errorClass: {}, " +
+                    "errorText: {}", uuid, fileName, className, methodName, lineNumber, ex.getClass(), ex.getMessage());
+        } else {
+            log.warn("Произошла необработанная ошибка - {}, id ошибки {}", ex.getMessage(), uuid);
+        }
+        error.put("error", "Произошла ошибка на сервере, id ошибки: " + uuid);
+
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -10,17 +10,17 @@ import java.time.LocalDate;
 
 @Data
 public class Film {
-    int id;
+    private int id;
 
     @NotBlank(message = "Название не может быть пустым")
-    String name;
+    private String name;
 
     @Size(max = 200, message = "Максимальная длина описания - 200 символов")
-    String description;
+    private String description;
 
     @MinDate(value = "1895-12-28")
-    LocalDate releaseDate;
+    private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность должна быть положительным числом")
-    int duration;
+    private int duration;
 }
