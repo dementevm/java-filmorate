@@ -2,11 +2,13 @@ package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceTest {
     private UserService userService;
@@ -63,11 +65,10 @@ class UserServiceTest {
     }
 
     @Test
-    void testUpdateUserCreatesNewIfNotExists() {
+    void testUnknownUserUpdateThrowsException() {
         testUser.setId(999);
-        User updated = userService.updateUser(testUser);
-
-        assertThat(updated.getId()).isNotEqualTo(999);
-        assertThat(userService.getAllUsers()).hasSize(1);
+        assertThatThrownBy(() -> userService.updateUser(testUser))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessage("Пользователя с ID 999 не существует");
     }
 }

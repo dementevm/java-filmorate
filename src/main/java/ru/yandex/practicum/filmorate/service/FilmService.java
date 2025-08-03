@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class FilmService {
                     filmId, films.get(filmId), film);
             return film;
         } else {
-            return createFilm(film);
+            throw new ObjectNotFoundException(String.format("Фильма с ID %d не существует", filmId));
         }
     }
 }

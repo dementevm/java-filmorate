@@ -28,11 +28,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(UserAlreadyExists.class)
-    public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExists ex) {
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
         Map<String, String> error = Map.of("error", ex.getMessage());
         log.warn("Ошибка при создании пользователя - {}", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ObjectNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleObjectNotFoundException(ObjectNotFoundException ex) {
+        Map<String, String> error = Map.of("error", ex.getMessage());
+        log.warn("Ошибка при обновлении объекта - {}", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
 }

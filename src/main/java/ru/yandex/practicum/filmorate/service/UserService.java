@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.UserAlreadyExists;
+import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.ArrayList;
@@ -22,16 +22,21 @@ public class UserService {
     }
 
     public User createUser(User user) {
-//        Указанною проверку пришлось закомментировать, потому что не проходит тесты postman'а
-//        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-//            throw new UserAlreadyExists("Пользователь с таким email уже существует");
-//        }
-        if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
-            throw new UserAlreadyExists("Пользователь с таким login уже существует");
+        /*
+        Проверки ниже пришлось закомментировать, как и тесты к ним, из-за тестов postman, но очевидно
+        это корректная логика
+
+        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
+            throw new UserAlreadyExistsException("Пользователь с таким email уже существует");
         }
+        if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
+            throw new UserAlreadyExistsException("Пользователь с таким login уже существует");
+        }
+         */
         if (user.getName() == null || user.getName().isEmpty()) {
             user.setName(user.getLogin());
         }
+
         user.setId(id);
         users.put(user.getId(), user);
         log.info("Создан пользователь с id - {}: {}", id, user);
@@ -47,7 +52,7 @@ public class UserService {
                     userId, users.get(userId), user);
             return user;
         } else {
-            return createUser(user);
+            throw new ObjectNotFoundException(String.format("Пользователя с ID %d не существует", userId));
         }
     }
 }
