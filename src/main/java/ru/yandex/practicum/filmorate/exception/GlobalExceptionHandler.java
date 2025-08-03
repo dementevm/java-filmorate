@@ -32,13 +32,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
         Map<String, String> error = Map.of("error", ex.getMessage());
         log.warn("Ошибка при создании пользователя - {}", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleObjectNotFoundException(ObjectNotFoundException ex) {
         Map<String, String> error = Map.of("error", ex.getMessage());
         log.warn("Ошибка при обновлении объекта - {}", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 }
