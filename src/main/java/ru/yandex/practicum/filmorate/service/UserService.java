@@ -1,58 +1,63 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
+@Getter
 @Service
 public class UserService {
-    private final Map<Integer, User> users = new HashMap<>();
-    private int id = 1;
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private final UserStorage userStorage;
+    private final static Logger log = LoggerFactory.getLogger(UserService.class);
+
+    public UserService(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
+
+    public User getUser(long userId) {
+        return userStorage.getUser(userId);
+    }
 
     public List<User> getAllUsers() {
-        return new ArrayList<>(users.values());
+        return userStorage.getAllUsers();
     }
 
     public User createUser(User user) {
-        /*
-        Проверки ниже пришлось закомментировать, как и тесты к ним, из-за тестов postman, но очевидно
-        это корректная логика
-
-        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-            throw new UserAlreadyExistsException("Пользователь с таким email уже существует");
-        }
-        if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
-            throw new UserAlreadyExistsException("Пользователь с таким login уже существует");
-        }
-         */
-        if (user.getName() == null || user.getName().isEmpty()) {
-            user.setName(user.getLogin());
-        }
-
-        user.setId(id);
-        users.put(user.getId(), user);
-        log.info("Создан пользователь с id - {}: {}", id, user);
-        id += 1;
-        return user;
+        return userStorage.createUser(user);
     }
 
     public User updateUser(User user) {
-        int userId = user.getId();
-        if (users.containsKey(userId)) {
-            users.put(userId, user);
-            log.info("Пользователь с id - {} обновлен. Старые данные - {}. Новые данные - {}",
-                    userId, users.get(userId), user);
-            return user;
-        } else {
-            throw new ObjectNotFoundException(String.format("Пользователя с ID %d не существует", userId));
-        }
+        return userStorage.updateUser(user);
+    }
+
+    public void addFriend(long userId1, long userId2) {
+        User user1 = userStorage.getUser(userId1);
+        User user2 = userStorage.getUser(userId2);
+        user1.getFriends().add(user2.getId());
+        user2.getFriends().add(user1.getId());
+        log.info("User {} and user {} became friends", user1, user2);
+    }
+
+    public void removeFriend(long userId1, long userId2) {
+        User user1 = userStorage.getUser(userId1);
+        User user2 = userStorage.getUser(userId2);
+        user1.getFriends().remove(user2.getId());
+        user2.getFriends().remove(user1.getId());
+        log.info("User {} and user {} removed from friends", user1, user2);
+    }
+
+    public List<User> getCommonFriends(long userId1, long userId2) {
+        User user1 = userStorage.getUser(userId1);
+        User user2 = userStorage.getUser(userId2);
+        HashSet<Long> commonFriends = new HashSet<>(user1.getFriends());
+        commonFriends.retainAll(user2.getFriends());
+        return commonFriends.stream().map(userStorage::getUser).collect(Collectors.toList());
     }
 }
