@@ -38,14 +38,14 @@ public class FilmService {
         Film film = filmStorage.getFilm(filmId);
         User user = userService.getUserStorage().getUser(userId);
         film.increaseLikes();
-        user.getLikedFilms().add(filmId);
+        film.getLikesFromUsers().add(user.getId());
     }
 
     public void unlikeFilm(long filmId, long userId) {
         Film film = filmStorage.getFilm(filmId);
         User user = userService.getUserStorage().getUser(userId);
         film.decreaseLikes();
-        user.getLikedFilms().remove(filmId);
+        film.getLikesFromUsers().remove(user.getId());
     }
 
     public List<Film> getPopularFilms(int limit) {

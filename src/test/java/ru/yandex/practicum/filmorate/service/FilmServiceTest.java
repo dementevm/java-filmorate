@@ -72,7 +72,7 @@ public class FilmServiceTest {
         filmService.likeFilm(createdFilm.getId(), testUser.getId());
 
         assertThat(createdFilm.getLikes()).isEqualTo(1);
-        assertThat(testUser.getLikedFilms()).contains(createdFilm.getId());
+        assertThat(testFilm.getLikesFromUsers()).contains(testUser.getId());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class FilmServiceTest {
         filmService.unlikeFilm(createdFilm.getId(), testUser.getId());
 
         assertThat(createdFilm.getLikes()).isEqualTo(0);
-        assertThat(testUser.getLikedFilms()).doesNotContain(createdFilm.getId());
+        assertThat(testFilm.getLikesFromUsers()).doesNotContain(testUser.getId());
     }
 
     @Test

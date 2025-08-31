@@ -27,5 +27,4 @@ public class User {
 
     private Set<Long> friends = new HashSet<>();
 
-    private Set<Long> likedFilms = new HashSet<>();
 }

@@ -7,6 +7,8 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.annotations.MinDate;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class Film {
@@ -33,4 +35,6 @@ public class Film {
     public void decreaseLikes() {
         likes--;
     }
+
+    private Set<Long> likesFromUsers = new HashSet<>();
 }
