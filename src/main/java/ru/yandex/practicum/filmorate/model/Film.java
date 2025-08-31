@@ -7,10 +7,12 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.annotations.MinDate;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class Film {
-    private int id;
+    private Long id;
 
     @NotBlank(message = "Название не может быть пустым")
     private String name;
@@ -23,4 +25,16 @@ public class Film {
 
     @Positive(message = "Продолжительность должна быть положительным числом")
     private int duration;
+
+    private int likes = 0;
+
+    public void increaseLikes() {
+        likes++;
+    }
+
+    public void decreaseLikes() {
+        likes--;
+    }
+
+    private Set<Long> likesFromUsers = new HashSet<>();
 }
