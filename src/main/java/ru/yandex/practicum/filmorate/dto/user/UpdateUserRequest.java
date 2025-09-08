@@ -41,4 +41,4 @@ public class UpdateUserRequest {
     public boolean hasBirthday() {
         return !(birthday == null);
     }
-} 
+}
