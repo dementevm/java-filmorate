@@ -2,65 +2,64 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.dto.user.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.user.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.user.UserDto;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 @Validated
 public class UserController {
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
     @GetMapping
-    public List<User> getUsers() {
+    public List<UserDto> getUsers() {
         return userService.getAllUsers();
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody final User user) {
-        return userService.createUser(user);
+    public UserDto createUser(@Valid @RequestBody NewUserRequest userRequest) {
+        return userService.createUser(userRequest);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody final User user) {
-        return userService.updateUser(user);
+    public UserDto updateUser(@RequestBody @Valid UpdateUserRequest userRequest) {
+        return userService.updateUser(userRequest);
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable("id") @Positive long id) {
+    public UserDto getUserById(@PathVariable("id") @Positive long id) {
         return userService.getUser(id);
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getFriends(@PathVariable("id") @Positive long id) {
-        User user = userService.getUser(id);
-        return user.getFriends().stream().map(userService::getUser).collect(Collectors.toList());
+    public List<UserDto> getUserFriends(@PathVariable("id") @Positive long id) {
+        return userService.getUserFriends(id);
     }
 
     @PutMapping("{id}/friends/{friendId}")
-    public void addFriend(@PathVariable("id") @Positive long id, @PathVariable("friendId") @Positive long friendId) {
+    public void addFriend(@PathVariable("id") @Positive long id,
+                          @PathVariable("friendId") @Positive long friendId) {
         userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public void deleteFriend(@PathVariable("id") @Positive long id, @PathVariable("friendId") @Positive long friendId) {
+    public void deleteFriend(@PathVariable("id") @Positive long id,
+                             @PathVariable("friendId") @Positive long friendId) {
         userService.removeFriend(id, friendId);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getFriendsCommon(@PathVariable("id") @Positive long id, @PathVariable("otherId") @Positive long otherId) {
+    public List<UserDto> getFriendsCommon(@PathVariable("id") @Positive long id,
+                                          @PathVariable("otherId") @Positive long otherId) {
         return userService.getCommonFriends(id, otherId);
     }
 }
