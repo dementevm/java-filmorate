@@ -123,8 +123,7 @@ class UserServiceTest {
 
         when(friendshipRepository.findFriendIds(1L)).thenReturn(List.of(2L, 3L));
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(friend1));
-        when(userRepository.findById(3L)).thenReturn(Optional.of(friend2));
+        when(userRepository.findAllByIds(List.of(2L, 3L))).thenReturn(List.of(friend1, friend2));
 
         List<UserDto> friends = userService.getUserFriends(1L);
 
@@ -135,6 +134,11 @@ class UserServiceTest {
     @Test
     @DisplayName("Общие друзья")
     void testGetCommonFriends() {
+        User u1 = new User();
+        u1.setId(1L);
+        User u2 = new User();
+        u2.setId(2L);
+
         User common = new User();
         common.setId(5L);
         common.setEmail("common@example.com");
@@ -142,8 +146,10 @@ class UserServiceTest {
         common.setName("Common");
         common.setBirthday(LocalDate.of(1995, 5, 5));
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(u1));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(u2));
         when(friendshipRepository.findCommonFriendIds(1L, 2L)).thenReturn(List.of(5L));
-        when(userRepository.findById(5L)).thenReturn(Optional.of(common));
+        when(userRepository.findAllByIds(List.of(5L))).thenReturn(List.of(common));
 
         List<UserDto> commonFriends = userService.getCommonFriends(1L, 2L);
 

@@ -15,7 +15,8 @@ import ru.yandex.practicum.filmorate.mappers.user.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
@@ -78,23 +79,33 @@ public class UserService {
     }
 
     public List<UserDto> getUserFriends(long id) {
-        userRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException("Пользователь с id=%d не найден".formatted(id)));
-        var ids = friendshipRepository.findFriendIds(id);
+        checkUserExist(id);
+        List<Long> ids = friendshipRepository.findFriendIds(id);
+        return getUserDto(ids);
+    }
+
+    public List<UserDto> getCommonFriends(long id, long otherId) {
+        checkUserExist(id);
+        checkUserExist(otherId);
+        List<Long> ids = friendshipRepository.findCommonFriendIds(id, otherId);
+        return getUserDto(ids);
+    }
+
+    private List<UserDto> getUserDto(List<Long> ids) {
         if (ids.isEmpty()) return List.of();
+        List<User> users = userRepository.findAllByIds(ids);
+        Map<Long, User> map = users.stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
         return ids.stream()
-                .map(userRepository::findById)
-                .flatMap(Optional::stream)
+                .map(map::get)
+                .filter(Objects::nonNull)
                 .map(UserMapper::mapToUserDto)
                 .toList();
     }
 
-    public List<UserDto> getCommonFriends(long id, long otherId) {
-        var ids = friendshipRepository.findCommonFriendIds(id, otherId);
-        if (ids.isEmpty()) return List.of();
-        return ids.stream()
-                .map(userRepository::findById)
-                .flatMap(Optional::stream)
-                .map(UserMapper::mapToUserDto)
-                .toList();
+    private void checkUserExist(long userId) {
+        if (userRepository.findById(userId).isEmpty()) {
+            throw new ObjectNotFoundException("Пользователь id=%d не найден".formatted(userId));
+        }
     }
 }

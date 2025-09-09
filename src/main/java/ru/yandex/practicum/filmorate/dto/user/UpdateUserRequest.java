@@ -15,11 +15,14 @@ public class UpdateUserRequest {
 
     @NotBlank
     @Email
+    @Size(max = 50)
     private String email;
 
     @NotBlank
+    @Size(max = 20)
     private String login;
 
+    @Size(max = 30)
     private String name;
 
     @PastOrPresent

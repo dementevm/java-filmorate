@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,13 @@ public class GenreRepository extends BaseRepository<Genre> {
 
     public List<Genre> findAll() {
         return findMany(FIND_ALL);
+    }
+
+    public List<Genre> findAllByIds(List<Short> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String sql = "SELECT * FROM genres WHERE id IN (" + placeholders + ")";
+        return findMany(sql, ids.toArray());
     }
 
     public Optional<Genre> findById(long id) {

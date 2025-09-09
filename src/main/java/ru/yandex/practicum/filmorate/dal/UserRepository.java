@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,13 @@ public class UserRepository extends BaseRepository<User> {
 
     public List<User> findAll() {
         return findMany(FIND_ALL_QUERY);
+    }
+
+    public List<User> findAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String sql = "SELECT * FROM users WHERE id IN (" + placeholders + ")";
+        return findMany(sql, ids.toArray());
     }
 
     public Optional<User> findById(long userId) {

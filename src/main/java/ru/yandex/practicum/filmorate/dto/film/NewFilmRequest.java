@@ -15,6 +15,7 @@ import java.util.Map;
 @Data
 public class NewFilmRequest {
     @NotBlank(message = "Название не может быть пустым")
+    @Size(max = 100)
     private String name;
 
     @Size(max = 200, message = "Максимальная длина описания - 200 символов")

@@ -9,9 +9,12 @@ import ru.yandex.practicum.filmorate.dto.film.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.mappers.film.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
@@ -47,31 +50,47 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public FilmDto createFilm(NewFilmRequest r) {
-        mpaRepository.findById(r.getMpaId())
-                .orElseThrow(() -> new ObjectNotFoundException("MPA id=%d не найден".formatted(r.getMpaId())));
-        List<Short> genreIds = r.getGenreIds() == null ? List.of()
-                : r.getGenreIds().stream().toList();
-        for (Short gid : genreIds) {
-            genreRepository.findById(gid).orElseThrow(() -> new ObjectNotFoundException("Жанр id=%d не найден".formatted(gid)));
-        }
+    public FilmDto createFilm(NewFilmRequest request) {
+        mpaRepository.findById(request.getMpaId())
+                .orElseThrow(() -> new ObjectNotFoundException("MPA id=%d не найден".formatted(request.getMpaId())));
+        List<Short> genreIds = getGenreIdsForFilm(request.getGenreIds());
+        validateGenresExist(genreIds);
 
-        Film toSave = FilmMapper.mapToFilm(r);
-        Film saved = filmRepository.save(toSave, r.getMpaId(), genreIds);
+        Film film = FilmMapper.mapToFilm(request);
+        Film saved = filmRepository.save(film, request.getMpaId(), genreIds);
         return FilmMapper.mapToFilmDto(saved);
     }
 
-    public FilmDto updateFilm(UpdateFilmRequest r) {
-        Film current = filmRepository.findById(r.getId())
-                .orElseThrow(() -> new ObjectNotFoundException("Фильм id=%d не найден".formatted(r.getId())));
-        mpaRepository.findById(r.getMpa().getId())
-                .orElseThrow(() -> new ObjectNotFoundException("MPA id=%d не найден".formatted(r.getMpa().getId())));
-        List<Short> genreIds = r.getGenreIds() == null ? List.of()
-                : r.getGenreIds().stream().toList();
 
-        FilmMapper.updateFilmFields(current, r);
-        Film updated = filmRepository.update(current, r.getMpa().getId(), genreIds);
+    public FilmDto updateFilm(UpdateFilmRequest request) {
+        Film current = filmRepository.findById(request.getId())
+                .orElseThrow(() -> new ObjectNotFoundException("Фильм id=%d не найден".formatted(request.getId())));
+
+        short mpaId = request.getMpa().getId();
+        mpaRepository.findById(mpaId)
+                .orElseThrow(() -> new ObjectNotFoundException("MPA id=%d не найден".formatted(mpaId)));
+        List<Short> genreIds = getGenreIdsForFilm(request.getGenreIds());
+        validateGenresExist(genreIds);
+
+        FilmMapper.updateFilmFields(current, request);
+        Film updated = filmRepository.update(current, (short) mpaId, genreIds);
         return FilmMapper.mapToFilmDto(updated);
+    }
+
+    private List<Short> getGenreIdsForFilm(List<Short> rawIds) {
+        if (rawIds == null || rawIds.isEmpty()) return List.of();
+        return rawIds.stream().filter(Objects::nonNull).distinct().toList();
+    }
+
+    private void validateGenresExist(List<Short> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        List<Genre> found = genreRepository.findAllByIds(ids);
+        Set<Short> existingGenreIds = found.stream().map(Genre::getId).collect(Collectors.toSet());
+        for (Short gid : ids) {
+            if (!existingGenreIds.contains(gid)) {
+                throw new ObjectNotFoundException("Жанр id=%d не найден".formatted(gid));
+            }
+        }
     }
 
     public List<FilmDto> getPopularFilms(int count) {
