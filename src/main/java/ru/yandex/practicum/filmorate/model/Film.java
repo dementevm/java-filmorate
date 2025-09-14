@@ -7,7 +7,9 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validation.annotations.MinDate;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -15,6 +17,7 @@ public class Film {
     private Long id;
 
     @NotBlank(message = "Название не может быть пустым")
+    @Size(max = 100)
     private String name;
 
     @Size(max = 200, message = "Максимальная длина описания - 200 символов")
@@ -36,5 +39,10 @@ public class Film {
         likes--;
     }
 
-    private Set<Long> likesFromUsers = new HashSet<>();
+    private Set<Genre> genres = new HashSet<>();
+
+    private MpaRating mpa;
+
+    private List<Long> likesFromUsers = new ArrayList<>();
+
 }

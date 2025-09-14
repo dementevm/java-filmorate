@@ -1,114 +1,117 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import ru.yandex.practicum.filmorate.dal.*;
+import ru.yandex.practicum.filmorate.dto.film.FilmDto;
+import ru.yandex.practicum.filmorate.dto.film.NewFilmRequest;
 import ru.yandex.practicum.filmorate.exception.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
-public class FilmServiceTest {
+@ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
+class FilmServiceTest {
+
+    @InjectMocks
     private FilmService filmService;
-    private UserService userService;
-    private Film testFilm;
-    private User testUser;
+
+    @Mock
+    private FilmRepository filmRepository;
+    @Mock
+    private FilmLikeRepository filmLikeRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private GenreRepository genreRepository;
+    @Mock
+    private MpaRatingRepository mpaRatingRepository;
+
+    private NewFilmRequest newFilm;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(new InMemoryUserStorage());
-        filmService = new FilmService(new InMemoryFilmStorage(), userService);
-        testFilm = new Film();
-        testFilm.setName("TestFilm");
-        testFilm.setDescription("TestDescription");
-        testFilm.setDuration(120);
-        testFilm.setReleaseDate(LocalDate.of(1999, 1, 1));
-
-        testUser = new User();
-        testUser.setEmail("test@mail.com");
-        testUser.setLogin("testuser");
-        testUser.setName("Test User");
-        testUser.setBirthday(LocalDate.of(1990, 1, 1));
-        userService.createUser(testUser);
+        newFilm = new NewFilmRequest();
+        newFilm.setName("Test Film");
+        newFilm.setDescription("Desc");
+        newFilm.setReleaseDate(LocalDate.of(2000, 1, 1));
+        newFilm.setDuration(100);
+        newFilm.setMpaFromJson(java.util.Map.of("id", 1));
     }
 
     @Test
+    @DisplayName("Создание фильма")
     void testCreateFilmSuccess() {
-        Film createdFilm = filmService.createFilm(testFilm);
+        MpaRating mpa = new MpaRating();
+        mpa.setId((short) 1);
+        mpa.setName("G");
 
-        assertThat(createdFilm).isNotNull();
-        assertThat(createdFilm.getId()).isEqualTo(1);
-        assertThat(createdFilm.getName()).isEqualTo(testFilm.getName());
-        assertThat(filmService.getAllFilms().size()).isEqualTo(1);
+        when(mpaRatingRepository.findById(1L)).thenReturn(Optional.of(mpa));
+        when(filmRepository.save(any(Film.class), eq(1L), any())).thenAnswer(inv -> {
+            Film f = inv.getArgument(0);
+            f.setId(1L);
+            return f;
+        });
+
+        FilmDto created = filmService.createFilm(newFilm);
+
+        assertThat(created.getId()).isEqualTo(1L);
+        assertThat(created.getName()).isEqualTo("Test Film");
+        verify(filmRepository).save(any(Film.class), eq(1L), any());
     }
 
     @Test
-    void testUpdateFilmSuccess() {
-        Film created = filmService.createFilm(testFilm);
-        created.setName("Updated Film");
-        Film updated = filmService.updateFilm(created);
+    @DisplayName("Лайк фильму")
+    void testAddLike() {
+        Film f = new Film();
+        f.setId(1L);
+        when(filmRepository.findById(1L)).thenReturn(Optional.of(f));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(new User()));
 
-        assertThat(updated.getName()).isEqualTo("Updated Film");
+        filmService.addLike(1L, 2L);
+
+        verify(filmLikeRepository).addLike(1L, 2L);
     }
 
     @Test
-    void testUpdateFilmCreatesNewIfNotExists() {
-        testFilm.setId(999L);
-
-        assertThatThrownBy(() -> filmService.updateFilm(testFilm))
-                .isInstanceOf(ObjectNotFoundException.class)
-                .hasMessage("Фильма с ID 999 не существует");
-    }
-
-    @Test
-    void testLikeFilm() {
-        Film createdFilm = filmService.createFilm(testFilm);
-        filmService.likeFilm(createdFilm.getId(), testUser.getId());
-
-        assertThat(createdFilm.getLikes()).isEqualTo(1);
-        assertThat(testFilm.getLikesFromUsers()).contains(testUser.getId());
-    }
-
-    @Test
-    void testUnlikeFilm() {
-        Film createdFilm = filmService.createFilm(testFilm);
-        filmService.likeFilm(createdFilm.getId(), testUser.getId());
-        filmService.unlikeFilm(createdFilm.getId(), testUser.getId());
-
-        assertThat(createdFilm.getLikes()).isEqualTo(0);
-        assertThat(testFilm.getLikesFromUsers()).doesNotContain(testUser.getId());
-    }
-
-    @Test
+    @DisplayName("Популярные фильмы сортируются по лайкам")
     void testGetPopularFilms() {
-        Film film1 = filmService.createFilm(testFilm);
+        Film f1 = new Film();
+        f1.setId(1L);
+        f1.setName("A");
+        f1.setLikes(1);
 
-        Film film2 = new Film();
-        film2.setName("Film2");
-        film2.setDescription("Desc2");
-        film2.setDuration(100);
-        film2.setReleaseDate(LocalDate.of(2000, 1, 1));
-        film2 = filmService.createFilm(film2);
+        Film f2 = new Film();
+        f2.setId(2L);
+        f2.setName("B");
+        f2.setLikes(3);
 
-        User user2 = new User();
-        user2.setEmail("user2@mail.com");
-        user2.setLogin("user2");
-        user2.setName("User Two");
-        user2.setBirthday(LocalDate.of(1991, 2, 2));
-        userService.createUser(user2);
+        when(filmRepository.findAll()).thenReturn(List.of(f1, f2));
 
-        filmService.likeFilm(film1.getId(), testUser.getId());
-        filmService.likeFilm(film2.getId(), testUser.getId());
-        filmService.likeFilm(film2.getId(), user2.getId());
+        List<FilmDto> popular = filmService.getPopularFilms(2);
 
-        List<Film> popular = filmService.getPopularFilms(2);
-        assertThat(popular.get(0).getId()).isEqualTo(film2.getId());
-        assertThat(popular.get(1).getId()).isEqualTo(film1.getId());
+        assertThat(popular).hasSize(2);
+        assertThat(popular.get(0).getId()).isEqualTo(2L);
+        assertThat(popular.get(1).getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Исключение, если фильм не найден при лайке")
+    void testAddLikeFilmNotFound() {
+        when(filmRepository.findById(100L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> filmService.addLike(100L, 1L))
+                .isInstanceOf(ObjectNotFoundException.class);
     }
 }
